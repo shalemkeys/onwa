@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Home — Onwa{% endblock %}
+{% block body %}
+<div class="page">
+
+  <div class="page-header">
+    <h1>Good to see you, {{ user['name'].split()[0] }}</h1>
+    <p>Here's what's happening across the Onwa community</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stat-row">
+    <div class="stat-box">
+      <div class="s-top">Books circulating</div>
+      <div class="s-num">{{ stats.books }}</div>
+      <div class="s-sub">Active in community</div>
+    </div>
+    <div class="stat-box">
+      <div class="s-top">Members</div>
+      <div class="s-num">{{ stats.members }}</div>
+      <div class="s-sub">Registered readers</div>
+    </div>
+    <div class="stat-box">
+      <div class="s-top">Journeys logged</div>
+      <div class="s-num">{{ stats.journeys }}</div>
+      <div class="s-sub">Passport entries</div>
+    </div>
+    <div class="stat-box" style="background:var(--ink);border-color:transparent">
+      <div class="s-top" style="color:rgba(255,255,255,.4)">Miles travelled</div>
+      <div class="s-num" style="color:var(--amber-bright)">{{ "%.0f"|format(stats.miles) }}</div>
+      <div class="s-sub" style="color:rgba(255,255,255,.35)">Across all books</div>
+    </div>
+  </div>
+
+  <div class="g2">
+
+    <!-- Left column -->
+    <div style="display:flex;flex-direction:column;gap:20px">
+
+      <!-- Recently added -->
+      <div class="card">
+        <div class="card-title">
+          Recently added
+          <a href="/library" class="btn btn-outline btn-sm">Browse library</a>
+        </div>
+        {% for book in recent_books %}
+        <div style="display:flex;align-items:center;gap:14px;padding:10px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+          <div class="bcover" style="width:38px;height:52px;background:{{ book['cover_color'] }}">{{ book['title'][:8] }}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ book['title'] }}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:1px">{{ book['author'] }}</div>
+          </div>
+          <a href="/passport/{{ book['passport_code'] }}" class="btn btn-ghost btn-xs">Passport</a>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- My queue -->
+      <div class="card">
+        <div class="card-title">My reading queue</div>
+        {% if my_queue %}
+          {% for q in my_queue %}
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+            <div class="bcover" style="width:32px;height:44px;background:{{ q['cover_color'] }}">{{ q['title'][:6] }}</div>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:14px">{{ q['title'] }}</div>
+              <div style="font-size:12px;color:var(--muted)">Position {{ q['position'] }} in queue</div>
+            </div>
+            <span class="badge b-amber">Waiting</span>
+          </div>
+          {% endfor %}
+        {% else %}
+        <div class="empty">
+          <div class="empty-icon">📖</div>
+          <p>You're not queued for any books.<br>
+          <a href="/library" style="color:var(--amber-mid);font-weight:600;text-decoration:none">Explore the library →</a></p>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right column -->
+    <div style="display:flex;flex-direction:column;gap:20px">
+
+      <!-- Your profile card -->
+      <div class="card" style="background:var(--ink);border:none">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+          <div style="width:46px;height:46px;border-radius:50%;background:var(--amber-bg);color:var(--amber);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ user['name'][0] }}</div>
+          <div>
+            <div style="font-weight:700;color:#fff;font-size:15px">{{ user['name'] }}</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.4)">{% if user['location'] %}📍 {{ user['location'] }}{% endif %}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:1px solid rgba(255,255,255,.08);padding-top:16px;text-align:center">
+          <div>
+            <div style="font-size:22px;font-weight:800;color:var(--amber-bright)">{{ user['points'] }}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">Points</div>
+          </div>
+          <div style="border-left:1px solid rgba(255,255,255,.08)">
+            <div style="font-size:22px;font-weight:800;color:#fff">{{ user['books_passed'] }}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">Passed on</div>
+          </div>
+          <div style="border-left:1px solid rgba(255,255,255,.08)">
+            <div style="font-size:22px;font-weight:800;color:#fff">{{ user['books_read'] }}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">Read</div>
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <a href="/profile/{{ user['id'] }}" class="btn btn-outline btn-sm" style="color:rgba(255,255,255,.6);border-color:rgba(255,255,255,.15);width:100%">View my profile</a>
+        </div>
+      </div>
+
+      <!-- Community feed -->
+      <div class="card">
+        <div class="card-title">Community activity</div>
+        {% for item in feed %}
+        <div class="feed-item">
+          <div class="feed-avatar">{{ item['uname'][0] }}</div>
+          <div>
+            <div class="feed-text">{{ item['message'] }}</div>
+            <div class="feed-time">{{ item['date'][:10] }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

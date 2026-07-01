@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Library — Onwa{% endblock %}
+{% block body %}
+<div class="page">
+
+  <div class="page-header">
+    <h1>Book Library</h1>
+    <p>{{ books|length }} book{{ 's' if books|length != 1 }} currently circulating in the community</p>
+  </div>
+
+  <!-- Search -->
+  <div class="card" style="margin-bottom:24px">
+    <form method="GET" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <div class="f-group" style="flex:1;min-width:200px;margin:0">
+        <label>Search</label>
+        <input type="text" id="search-input" name="q" value="{{ q }}" placeholder="Title or author…">
+      </div>
+      <div class="f-group" style="min-width:170px;margin:0">
+        <label>Genre</label>
+        <select name="genre">
+          <option value="">All genres</option>
+          {% for g in genres %}
+          <option value="{{ g['genre'] }}" {% if genre==g['genre'] %}selected{% endif %}>{{ g['genre'] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-dark">Search</button>
+      {% if q or genre %}<a href="/library" class="btn btn-outline">Clear</a>{% endif %}
+    </form>
+    <div id="search-results" style="margin-top:12px;display:none;border-top:1px solid var(--border);padding-top:12px"></div>
+  </div>
+
+  {% if books %}
+  <div id="books-grid" class="g3">
+    {% for book in books %}
+    <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s" onmouseover="this.style.boxShadow='var(--sh-md)'" onmouseout="this.style.boxShadow='var(--sh)'">
+
+      <!-- Spine -->
+      <div style="height:8px;background:{{ book['cover_color'] }}"></div>
+
+      <!-- Cover strip -->
+      <div style="padding:20px 20px 0;display:flex;gap:16px;align-items:flex-start">
+        <div class="bcover" style="width:52px;height:72px;background:{{ book['cover_color'] }};font-size:8px;flex-shrink:0">{{ book['title'] }}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:15px;line-height:1.3;color:var(--ink);margin-bottom:3px">{{ book['title'] }}</div>
+          <div style="font-size:13px;color:var(--muted)">{{ book['author'] }}</div>
+          <span class="badge b-grey" style="margin-top:6px">{{ book['genre'] }}</span>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:14px 20px;flex:1;display:flex;flex-direction:column">
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;flex:1;margin-bottom:14px">{{ book['description'][:100] }}{% if book['description']|length > 100 %}…{% endif %}</p>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border);margin-bottom:12px">
+          <div style="font-size:12px;color:var(--muted)">
+            {{ book['total_readers'] }} reader{{ 's' if book['total_readers'] != 1 }}
+            {% if book['total_miles'] > 0 %}· {{ "%.0f"|format(book['total_miles']) }} mi{% endif %}
+          </div>
+          <span class="badge {% if book['status']=='available' %}b-green{% else %}b-amber{% endif %}">
+            {% if book['status']=='available' %}Available{% else %}Circulating{% endif %}
+          </span>
+        </div>
+
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px">
+          With <strong style="color:var(--ink)">{{ book['holder_name'] or 'Community' }}</strong>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <a href="/passport/{{ book['passport_code'] }}" class="btn btn-dark btn-sm" style="flex:1">View Passport</a>
+          <button onclick="joinQueue({{ book['id'] }}, this)" class="btn btn-amber btn-sm">Queue</button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card">
+    <div class="empty">
+      <div class="empty-icon">🔍</div>
+      <p>No books matched your search.<br>
+      <a href="/library" style="color:var(--amber-mid);text-decoration:none;font-weight:600">Clear filters</a></p>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let searchTimeout;
+document.getElementById('search-input').addEventListener('keyup', function(e) {
+  clearTimeout(searchTimeout);
+  const q = this.value.trim();
+  const resultsDiv = document.getElementById('search-results');
+  
+  if(q.length < 2) {
+    resultsDiv.style.display = 'none';
+    return;
+  }
+  
+  searchTimeout = setTimeout(() => {
+    fetch('/api/search?q=' + encodeURIComponent(q))
+      .then(r => r.json())
+      .then(books => {
+        if(books.length > 0) {
+          resultsDiv.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">Quick results:</div>' + 
+            books.map(b => `
+              <a href="/passport/${b.passport_code}" style="display:flex;align-items:center;gap:8px;padding:6px 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border)">
+                <div class="bcover" style="width:30px;height:40px;background:${b.cover_color};font-size:7px">${b.title.substring(0,6)}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.title}</div>
+                  <div style="font-size:11px;color:var(--muted)">${b.author}</div>
+                </div>
+              </a>
+            `).join('');
+          resultsDiv.style.display = 'block';
+        } else {
+          resultsDiv.innerHTML = '<div style="font-size:12px;color:var(--muted)">No matches found.</div>';
+          resultsDiv.style.display = 'block';
+        }
+      });
+  }, 300);
+});
+
+function joinQueue(bookId, btn) {
+  btn.disabled = true;
+  btn.textContent = '…';
+  fetch('/queue/join/' + bookId, {method:'POST'})
+    .then(r => r.json())
+    .then(() => {
+      btn.textContent = '✓ Queued';
+      btn.classList.remove('btn-amber');
+      btn.classList.add('btn-ghost');
+      btn.style.color = 'var(--green-mid)';
+    });
+}
+</script>
+{% endblock %}

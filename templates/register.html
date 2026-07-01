@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Register — Onwa{% endblock %}
+{% block content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e,#0f3460)">
+  <div style="background:#fff;border-radius:16px;padding:40px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="text-align:center;margin-bottom:30px">
+      <h1 style="font-size:32px;color:#1a1a2e">On<span style="color:#f39c12">wa</span></h1>
+      <p style="color:#888;font-size:14px;margin-top:6px">Join the book community</p>
+    </div>
+    {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+    <form method="POST">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" name="name" placeholder="Your name" required>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" name="email" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-gold" style="width:100%;padding:12px;font-size:15px">Create Account</button>
+    </form>
+    <p style="text-align:center;margin-top:16px;font-size:13px;color:#888">Already a member? <a href="/login" style="color:#f39c12;font-weight:600">Sign in</a></p>
+  </div>
+</div>
+{% endblock %}

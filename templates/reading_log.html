@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}My Reading Log — Onwa{% endblock %}
+{% block body %}
+<div class="page">
+  <div class="page-header">
+    <h1>📖 My Reading Log</h1>
+    <p>Track books you're reading, have finished, and want to read</p>
+  </div>
+
+  <!-- Stats -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px">
+    <div class="stat-box">
+      <div class="s-top">Reading now</div>
+      <div class="s-num">{{ stats.reading }}</div>
+      <div class="s-sub">In progress</div>
+    </div>
+    <div class="stat-box">
+      <div class="s-top">Finished</div>
+      <div class="s-num">{{ stats.finished }}</div>
+      <div class="s-sub">Completed reads</div>
+    </div>
+    <div class="stat-box">
+      <div class="s-top">Want to read</div>
+      <div class="s-num">{{ stats.want }}</div>
+      <div class="s-sub">On your list</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('all',this)">All books</button>
+    <button class="tab" onclick="showTab('reading',this)">Reading</button>
+    <button class="tab" onclick="showTab('finished',this)">Finished</button>
+    <button class="tab" onclick="showTab('want',this)">Want to read</button>
+  </div>
+
+  <!-- All entries -->
+  <div id="tab-all" class="card">
+    {% if entries %}
+      {% for e in entries %}
+      <div style="display:flex;align-items:center;gap:16px;padding:14px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <div class="bcover" style="width:48px;height:66px;background:{{ e['cover_color'] }};font-size:8px">{{ e['title'][:8] }}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">{{ e['title'] }}</div>
+          <div style="font-size:12px;color:var(--muted)">{{ e['author'] }}</div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <span class="badge {% if e['status']=='reading' %}b-amber{% elif e['status']=='finished' %}b-green{% else %}b-blue{% endif %}">
+              {% if e['status']=='reading' %}Currently reading{% elif e['status']=='finished' %}Finished{% else %}Want to read{% endif %}
+            </span>
+            {% if e['date_finished'] %}
+            <span class="badge b-grey">{{ e['date_finished'][:10] }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <a href="/passport/{{ e['passport_code'] }}" class="btn btn-outline btn-xs">Passport</a>
+          <select onchange="updateStatus({{ e['book_id'] }}, this.value)" style="padding:5px 10px;border:1.5px solid var(--border-2);border-radius:6px;font-size:12px;background:#fff;cursor:pointer">
+            <option value="want" {% if e['status']=='want' %}selected{% endif %}>Want</option>
+            <option value="reading" {% if e['status']=='reading' %}selected{% endif %}>Reading</option>
+            <option value="finished" {% if e['status']=='finished' %}selected{% endif %}>Finished</option>
+          </select>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty">
+      <div class="empty-icon">📚</div>
+      <p>You haven't logged any books yet.<br>
+      <a href="/library" style="color:var(--amber-mid);text-decoration:none;font-weight:600">Browse the library →</a></p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Reading tab -->
+  <div id="tab-reading" class="card" style="display:none">
+    {% set reading_entries = entries | selectattr('status', 'equalto', 'reading') | list %}
+    {% if reading_entries %}
+      {% for e in reading_entries %}
+      <div style="display:flex;align-items:center;gap:16px;padding:14px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <div class="bcover" style="width:48px;height:66px;background:{{ e['cover_color'] }};font-size:8px">{{ e['title'][:8] }}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">{{ e['title'] }}</div>
+          <div style="font-size:12px;color:var(--muted)">{{ e['author'] }}</div>
+        </div>
+        <a href="/passport/{{ e['passport_code'] }}" class="btn btn-outline btn-xs">Passport</a>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty"><div class="empty-icon">📖</div><p>No books currently being read.</p></div>
+    {% endif %}
+  </div>
+
+  <!-- Finished tab -->
+  <div id="tab-finished" class="card" style="display:none">
+    {% set finished_entries = entries | selectattr('status', 'equalto', 'finished') | list %}
+    {% if finished_entries %}
+      {% for e in finished_entries %}
+      <div style="display:flex;align-items:center;gap:16px;padding:14px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <div class="bcover" style="width:48px;height:66px;background:{{ e['cover_color'] }};font-size:8px">{{ e['title'][:8] }}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">{{ e['title'] }}</div>
+          <div style="font-size:12px;color:var(--muted)">{{ e['author'] }}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">✓ Finished {{ e['date_finished'][:10] }}</div>
+        </div>
+        <a href="/passport/{{ e['passport_code'] }}" class="btn btn-outline btn-xs">Passport</a>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty"><div class="empty-icon">✓</div><p>No finished books yet.</p></div>
+    {% endif %}
+  </div>
+
+  <!-- Want tab -->
+  <div id="tab-want" class="card" style="display:none">
+    {% set want_entries = entries | selectattr('status', 'equalto', 'want') | list %}
+    {% if want_entries %}
+      {% for e in want_entries %}
+      <div style="display:flex;align-items:center;gap:16px;padding:14px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <div class="bcover" style="width:48px;height:66px;background:{{ e['cover_color'] }};font-size:8px">{{ e['title'][:8] }}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">{{ e['title'] }}</div>
+          <div style="font-size:12px;color:var(--muted)">{{ e['author'] }}</div>
+        </div>
+        <a href="/passport/{{ e['passport_code'] }}" class="btn btn-outline btn-xs">Passport</a>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty"><div class="empty-icon">💭</div><p>No books on your want list yet.</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function showTab(name, btn) {
+  ['all','reading','finished','want'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function updateStatus(bookId, status) {
+  fetch('/reading-log/update/' + bookId, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({status: status})
+  }).then(r => r.json()).then(() => {
+    setTimeout(() => location.reload(), 300);
+  });
+}
+</script>
+{% endblock %}

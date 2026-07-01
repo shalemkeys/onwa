@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% block title %}Admin — Onwa{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block body %}
+<div class="page">
+
+  <div class="page-header">
+    <h1>Admin Panel</h1>
+    <p>Platform management and analytics</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stat-row" style="margin-bottom:28px">
+    <div class="stat-box">
+      <div class="s-top">Members</div>
+      <div class="s-num">{{ stats.users }}</div>
+      <div class="s-sub">Registered accounts</div>
+    </div>
+    <div class="stat-box">
+      <div class="s-top">Books</div>
+      <div class="s-num">{{ stats.books }}</div>
+      <div class="s-sub">Active passports</div>
+    </div>
+    <div class="stat-box">
+      <div class="s-top">Queue entries</div>
+      <div class="s-num">{{ stats.queue }}</div>
+      <div class="s-sub">Currently waiting</div>
+    </div>
+    <div class="stat-box" style="background:var(--ink);border:none">
+      <div class="s-top" style="color:rgba(255,255,255,.4)">Revenue</div>
+      <div class="s-num" style="color:var(--amber-bright)">£{{ "%.2f"|format(stats.revenue) }}</div>
+      <div class="s-sub" style="color:rgba(255,255,255,.35)">Total subscriptions</div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div class="g2" style="margin-bottom:24px">
+    <div class="card">
+      <div class="card-title">Books by genre</div>
+      <div style="height:200px;display:flex;align-items:center;justify-content:center">
+        <canvas id="genreChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Community at a glance</div>
+      <div style="display:flex;flex-direction:column;gap:16px;padding-top:4px">
+        {% for lbl,val,max,col in [
+            ('Books circulating', stats.books, 10, 'var(--amber-bright)'),
+            ('Passport journeys', stats.journeys, 20, 'var(--green-mid)'),
+            ('Miles travelled', stats.miles|int, 1000, '#6366f1'),
+            ('Members', stats.users, 10, 'var(--amber-mid)')
+          ] %}
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:13px;color:var(--ink-2);font-weight:500">{{ lbl }}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--ink)">{{ val }}</span>
+          </div>
+          <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:{{ [val/max*100,100]|min }}%;background:{{ col }};border-radius:3px;transition:width .5s"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('books',this)">Books</button>
+    <button class="tab" onclick="showTab('members',this)">Members</button>
+    <button class="tab" onclick="showTab('payments',this)">Payments</button>
+    <button class="tab" onclick="showTab('add',this)">+ Add book</button>
+  </div>
+
+  <!-- Books -->
+  <div id="panel-books" class="card">
+    <div class="card-title">
+      All books
+      <span class="badge b-grey">{{ stats.books }}</span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Book</th><th>Genre</th><th>Readers</th><th>Miles</th><th>Holder</th><th>Passport</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for book in books %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="bcover" style="width:30px;height:42px;background:{{ book['cover_color'] }};font-size:7px">{{ book['title'][:6] }}</div>
+                <div>
+                  <div style="font-weight:600;font-size:14px">{{ book['title'] }}</div>
+                  <div style="font-size:12px;color:var(--muted)">{{ book['author'] }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge b-grey">{{ book['genre'] }}</span></td>
+            <td style="font-weight:600">{{ book['total_readers'] }}</td>
+            <td style="color:var(--muted)">{{ "%.0f"|format(book['total_miles']) }}</td>
+            <td style="font-size:13px;color:var(--muted)">{{ book['holder_name'] or '—' }}</td>
+            <td style="font-family:monospace;font-size:12px;color:var(--amber-mid);font-weight:700">{{ book['passport_code'] }}</td>
+            <td>
+              <form method="POST" action="/admin/delete_book/{{ book['id'] }}" onsubmit="return confirm('Delete {{ book['title'] }}?')" style="display:inline">
+                <button class="btn btn-danger btn-xs">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Members -->
+  <div id="panel-members" class="card" style="display:none">
+    <div class="card-title">All members <span class="badge b-grey">{{ stats.users }}</span></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Member</th><th>Location</th><th>Role</th><th>Points</th><th>Passed</th><th>Read</th><th>Joined</th></tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--amber-bg);color:var(--amber);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ u['name'][0] }}</div>
+                <div>
+                  <div style="font-weight:600;font-size:14px">{{ u['name'] }}</div>
+                  <div style="font-size:12px;color:var(--muted)">{{ u['email'] }}</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-size:13px;color:var(--muted)">{{ u['location'] or '—' }}</td>
+            <td><span class="badge {% if u['role']=='admin' %}b-ink{% else %}b-grey{% endif %}">{{ u['role']|title }}</span></td>
+            <td><span class="badge b-amber">{{ u['points'] }}</span></td>
+            <td style="font-weight:600">{{ u['books_passed'] }}</td>
+            <td style="font-weight:600">{{ u['books_read'] }}</td>
+            <td style="font-size:12px;color:var(--muted)">{{ u['date_joined'][:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Payments -->
+  <div id="panel-payments" class="card" style="display:none">
+    <div class="card-title">Payment records</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Member</th><th>Amount</th><th>Type</th><th>Description</th><th>Status</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td style="font-weight:600">{{ p['uname'] }}</td>
+            <td style="font-weight:700;color:var(--ink)">£{{ "%.2f"|format(p['amount']) }}</td>
+            <td><span class="badge b-blue">{{ p['type'] }}</span></td>
+            <td style="font-size:13px;color:var(--muted)">{{ p['description'] }}</td>
+            <td><span class="badge b-green">{{ p['status'] }}</span></td>
+            <td style="font-size:12px;color:var(--muted)">{{ p['date'][:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add book -->
+  <div id="panel-add" class="card" style="display:none;max-width:520px">
+    <div class="card-title" style="margin-bottom:20px">Add new book</div>
+    <form method="POST" action="/admin/add_book">
+      <div class="f-row">
+        <div class="f-group">
+          <label>Title</label>
+          <input type="text" name="title" required placeholder="Book title">
+        </div>
+        <div class="f-group">
+          <label>Author</label>
+          <input type="text" name="author" required placeholder="Author name">
+        </div>
+      </div>
+      <div class="f-group">
+        <label>Genre</label>
+        <select name="genre" required>
+          <option value="">Select genre</option>
+          {% for g in ['Fiction','Non-Fiction','Self-Help','Dystopian','History','Classic','Biography','Psychology','Business','Science'] %}
+          <option>{{ g }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="f-group">
+        <label>Description</label>
+        <textarea name="description" rows="3" placeholder="Brief description…"></textarea>
+      </div>
+      <button type="submit" class="btn btn-dark">Add to library</button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// Tabs
+function showTab(name, el) {
+  ['books','members','payments','add'].forEach(t => {
+    document.getElementById('panel-'+t).style.display = t===name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Genre chart
+const genres  = {{ genre_data | map(attribute='genre') | list | tojson }};
+const counts  = {{ genre_data | map(attribute='cnt')   | list | tojson }};
+const colors  = ['#c0783c','#2d6a4f','#6b2d2d','#4a4e8c','#1a6b8a','#7b5e3a','#3d6b5e','#5c4a7a'];
+
+new Chart(document.getElementById('genreChart'), {
+  type: 'doughnut',
+  data: {
+    labels: genres,
+    datasets: [{ data: counts, backgroundColor: colors, borderWidth: 0, hoverOffset: 6 }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: { font: { size: 11, family: 'Inter' }, boxWidth: 10, padding: 12, color: '#78716c' }
+      }
+    },
+    cutout: '65%'
+  }
+});
+</script>
+{% endblock %}

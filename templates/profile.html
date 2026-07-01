@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}{{ user['name'] }} — Onwa{% endblock %}
+{% block body %}
+<div class="page">
+
+  <!-- Profile header -->
+  <div class="card" style="margin-bottom:24px;padding:32px">
+    <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+      <div style="width:72px;height:72px;border-radius:50%;background:var(--amber-bg);color:var(--amber);font-size:28px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--border-2);flex-shrink:0">{{ user['name'][0] }}</div>
+      <div style="flex:1">
+        <h1 style="font-family:'Lora',serif;font-size:22px;font-weight:600;color:var(--ink);margin-bottom:4px">{{ user['name'] }}</h1>
+        {% if user['location'] %}<div style="font-size:14px;color:var(--muted);margin-bottom:8px">📍 {{ user['location'] }}</div>{% endif %}
+        {% if user['bio'] %}<p style="font-size:14px;color:var(--muted);max-width:500px;line-height:1.6">{{ user['bio'] }}</p>{% endif %}
+        <div style="margin-top:6px"><span class="badge {% if user['role']=='admin' %}b-ink{% else %}b-grey{% endif %}">{{ user['role']|title }}</span></div>
+      </div>
+      <div style="display:flex;gap:20px;flex-shrink:0;flex-wrap:wrap">
+        {% for val,lbl in [(user['points'],'Points'),(user['books_passed'],'Books passed'),(user['books_read'],'Books read')] %}
+        <div style="text-align:center">
+          <div style="font-size:26px;font-weight:800;color:var(--ink)">{{ val }}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">{{ lbl }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+
+    <!-- Books read -->
+    <div class="card">
+      <div class="card-title">Books on their journey</div>
+      {% if passed %}
+        {% for entry in passed %}
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+          <div class="bcover" style="width:36px;height:50px;background:{{ entry['cover_color'] }}">{{ entry['title'][:6] }}</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">{{ entry['title'] }}</div>
+            {% if entry['note'] %}
+            <div style="font-size:12px;color:var(--muted);font-style:italic;margin-top:2px">"{{ entry['note'][:60] }}{% if entry['note']|length > 60 %}…{% endif %}"</div>
+            {% endif %}
+          </div>
+          <a href="/passport/{{ entry['passport_code'] }}" class="btn btn-ghost btn-xs">Passport</a>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="empty"><div class="empty-icon">📚</div><p>No books yet.</p></div>
+      {% endif %}
+    </div>
+
+    <!-- Activity -->
+    <div class="card">
+      <div class="card-title">Recent activity</div>
+      {% if activity %}
+        {% for a in activity %}
+        <div class="feed-item">
+          <div class="feed-avatar" style="font-size:14px">
+            {% if a['type']=='passed' %}📤{% elif a['type']=='read' %}📖{% elif a['type']=='queued' %}📋{% elif a['type']=='added' %}➕{% else %}👋{% endif %}
+          </div>
+          <div>
+            <div class="feed-text">{{ a['message'] }}</div>
+            <div class="feed-time">{{ a['date'][:10] }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="empty"><div class="empty-icon">💬</div><p>No activity yet.</p></div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <div style="margin-top:12px">
+    <a href="/dashboard" class="btn btn-outline btn-sm">← Back to home</a>
+  </div>
+
+</div>
+{% endblock %}

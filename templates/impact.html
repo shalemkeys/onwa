@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Impact — Onwa{% endblock %}
+{% block body %}
+<div class="page">
+  <div class="page-header">
+    <h1>🌍 Community Impact</h1>
+    <p>The real-world difference Onwa is making</p>
+  </div>
+
+  <!-- Impact cards -->
+  <div class="stat-row" style="margin-bottom:28px">
+    <div class="stat-box">
+      <div class="s-top">Books saved from shelves</div>
+      <div class="s-num">{{ total_books }}</div>
+      <div class="s-sub">Still circulating</div>
+    </div>
+    <div class="stat-box">
+      <div class="s-top">Miles travelled</div>
+      <div class="s-num">{{ "%.0f"|format(total_miles) }}</div>
+      <div class="s-sub">Books on the move</div>
+    </div>
+    <div class="stat-box">
+      <div class="s-top">CO₂ avoided</div>
+      <div class="s-num">{{ "%.1f"|format(co2_saved) }} kg</div>
+      <div class="s-sub">vs. new book purchases</div>
+    </div>
+    <div class="stat-box" style="background:var(--ink);border:none">
+      <div class="s-top" style="color:rgba(255,255,255,.4)">Passport entries</div>
+      <div class="s-num" style="color:var(--amber-bright)">{{ total_journeys }}</div>
+      <div class="s-sub" style="color:rgba(255,255,255,.35)">Journey stops logged</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- Top travelled books -->
+    <div class="card">
+      <div class="card-title">Most travelled books</div>
+      {% for book in top_books %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <div>
+          <div style="font-weight:600;font-size:14px">{{ book['title'] }}</div>
+          <div style="font-size:12px;color:var(--muted)">{{ book['total_readers'] }} reader{{ 's' if book['total_readers'] != 1 }}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:16px;font-weight:800;color:var(--ink)">{{ "%.0f"|format(book['total_miles']) }}</div>
+          <div style="font-size:11px;color:var(--muted)">miles</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Milestones -->
+    <div class="card">
+      <div class="card-title">Community Milestones</div>
+      {% set milestones = [
+        {'target': 10, 'icon': '📚', 'name': 'First 10 books', 'achieved': total_books >= 10},
+        {'target': 100, 'icon': '🎉', 'name': '100 books circulating', 'achieved': total_books >= 100},
+        {'target': 500, 'icon': '🌟', 'name': '500 miles travelled', 'achieved': total_miles >= 500},
+        {'target': 1000, 'icon': '🚀', 'name': '1000 miles milestone', 'achieved': total_miles >= 1000}
+      ] %}
+      {% for m in milestones %}
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <div style="font-size:20px">{{ m['icon'] }}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px">{{ m['name'] }}</div>
+          <div style="font-size:11px;color:var(--muted)">Target: {{ m['target'] }}</div>
+        </div>
+        {% if m['achieved'] %}
+        <span class="badge b-green">✓ Achieved</span>
+        {% else %}
+        <span class="badge b-grey">Coming soon</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Impact breakdown -->
+  <div class="card" style="margin-top:20px">
+    <div class="card-title">How we calculate impact</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding-top:10px">
+      <div style="border-right:1px solid var(--border);padding-right:20px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">📚 Books saved</div>
+        <p style="font-size:13px;color:var(--ink-2);line-height:1.6">Each book in circulation is one fewer book that needs to be printed and shipped.</p>
+      </div>
+      <div style="border-right:1px solid var(--border);padding-right:20px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">🌍 CO₂ avoided</div>
+        <p style="font-size:13px;color:var(--ink-2);line-height:1.6">Each book passed on saves ~0.5kg CO₂ vs. printing and shipping a new copy.</p>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">🗺️ Miles logged</div>
+        <p style="font-size:13px;color:var(--ink-2);line-height:1.6">Every journey is recorded, showing how far stories travel across communities.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
